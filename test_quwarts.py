@@ -1,5 +1,5 @@
 """
-Test suite for WDIRS system.
+Test suite for QuWARTS system.
 """
 
 import pytest
@@ -14,7 +14,7 @@ from sieve_synthesizer import SieveSynthesizer
 from extractor import ConstrainedExtractor, OllamaClient
 from entity_resolver import EntityResolver, EntityMention
 from delta_engine import DeltaEngine, DeltaType
-from wdirs_runner import WDIRSRunner
+from quwarts_runner import QuWARTSRunner
 
 
 # ============================================================================
@@ -309,7 +309,7 @@ class TestIntegration:
         # 5. Validating results
         
         # Simplified test - just check imports work
-        from wdirs_runner import WDIRSRunner
+        from quwarts_runner import QuWARTSRunner
         
         # Would need proper database setup
         pass

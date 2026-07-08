@@ -1,11 +1,11 @@
 """
-Run one Player source document through WDIRS extraction with:
+Run one Player source document through QuWARTS extraction with:
 - workload-derived schema
 - workload normalization hints
 - current iterative long-document extraction path
 
 Usage:
-  .venv/bin/python systems/WDIRS/debug_single_player_extract.py \
+  .venv/bin/python debug_single_player_extract.py \
       --file source_data/Player/player/119.txt
 """
 

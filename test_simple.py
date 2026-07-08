@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Simple test to verify WDIRS can run end-to-end without spaCy.
+Simple test to verify QuWARTS can run end-to-end without spaCy.
 Tests basic functionality with qwen2.5:0.5b model.
 """
 
@@ -8,11 +8,11 @@ import sys
 import os
 from pathlib import Path
 
-# Add WDIRS to path
+# Add QuWARTS to path
 sys.path.insert(0, str(Path(__file__).parent))
 
 # Set environment variables
-os.environ['WDIRS_DB_PATH'] = '/tmp/wdirs_test.db'
+os.environ['QUWARTS_DB_PATH'] = '/tmp/quwarts_test.db'
 os.environ['OLLAMA_MODEL'] = 'qwen2.5:7b-instruct'
 
 def test_imports():
@@ -38,8 +38,8 @@ def test_imports():
         from delta_engine import DeltaEngine
         print("✓ DeltaEngine imported")
         
-        from wdirs_runner import WDIRSRunner
-        print("✓ WDIRSRunner imported")
+        from quwarts_runner import QuWARTSRunner
+        print("✓ QuWARTSRunner imported")
         
         return True
     
@@ -177,7 +177,7 @@ def test_database_connection():
 def main():
     """Run all tests."""
     print("=" * 80)
-    print("WDIRS SIMPLE TEST")
+    print("QuWARTS SIMPLE TEST")
     print("=" * 80)
     
     results = {

@@ -1,5 +1,5 @@
 """
-Player workload preprocessing for WDIRS.
+Player workload preprocessing for QuWARTS.
 
 Runs offline relational synthesis with the Player training workload
 (Agg, Filter, Select, Mixed, Join). All outputs are written to a
@@ -8,8 +8,8 @@ timestamped run directory so previous runs are never overwritten.
 Outputs (per run):
   results/player_workload_preprocess/run_YYYYMMDD_HHMMSS/
     preprocess.log
-    wdirs.db
-    Player_preprocessed.db   (copy of wdirs.db)
+    quwarts.db
+    Player_preprocessed.db   (copy of quwarts.db)
     Player_identity_columns.json
     Player_preprocessing_stats.json
     token_cost.json
@@ -24,13 +24,13 @@ import time
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 
-# Token counter must be imported before any WDIRS component.
+# Token counter must be imported before any QuWARTS component.
 sys.path.insert(0, str(Path(__file__).parent))
 from token_counter import GLOBAL_COUNTER, ensure_precise_tokenizer_ready
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from wdirs_runner import WDIRSRunner
+from quwarts_runner import QuWARTSRunner
 from config import QUERY_DIR, SOURCE_DATA_DIR, RESULTS_DIR, PROJECT_ROOT
 
 logger = logging.getLogger(__name__)
@@ -193,7 +193,7 @@ def run_preprocessing_phase(
         original_cache = config_module.CACHE_DIR
         config_module.CACHE_DIR = cache_dir
 
-        db_path = run_dir / "wdirs.db"
+        db_path = run_dir / "quwarts.db"
         postgres_uri = f"sqlite:///{db_path}"
 
         try:
@@ -201,7 +201,7 @@ def run_preprocessing_phase(
             logger.info(f"  DB: {db_path}")
             logger.info(f"  Cache: {cache_dir}")
 
-            runner = WDIRSRunner(
+            runner = QuWARTSRunner(
                 dataset=dataset,
                 postgres_uri=postgres_uri,
                 use_projection_fastpath=projection_fastpath,
@@ -292,7 +292,7 @@ def main(
     log_file = run_dir / "preprocess.log"
     setup_logging(log_file)
 
-    logger.info("WDIRS Player workload preprocessing (preprocessing only)")
+    logger.info("QuWARTS Player workload preprocessing (preprocessing only)")
     logger.info(f"Dataset: {DATASET}")
     logger.info(f"Query Dataset: {DATASET_QUERY}")
     logger.info(f"Run directory: {run_dir}")
@@ -330,7 +330,7 @@ def main(
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Run WDIRS Player workload preprocessing only.")
+    parser = argparse.ArgumentParser(description="Run QuWARTS Player workload preprocessing only.")
     parser.add_argument(
         "--projection-fastpath",
         action="store_true",

@@ -1,5 +1,5 @@
 """
-WDIRS Runner - Main orchestration module.
+QuWARTS Runner - Main orchestration module.
 Integrates all components and provides the main interface.
 """
 
@@ -182,12 +182,12 @@ def _validate_record(
 
 
 # ============================================================================
-# WDIRS Runner
+# QuWARTS Runner
 # ============================================================================
 
-class WDIRSRunner:
+class QuWARTSRunner:
     """
-    Main orchestrator for WDIRS system.
+    Main orchestrator for QuWARTS system.
     Coordinates all phases of the pipeline.
     """
     
@@ -200,7 +200,7 @@ class WDIRSRunner:
         cache_dir: Optional[Path] = None,
     ):
         """
-        Initialize WDIRS runner.
+        Initialize QuWARTS runner.
         
         Args:
             dataset: Name of the dataset
@@ -226,7 +226,7 @@ class WDIRSRunner:
             self.cache_dir = CACHE_DIR / dataset
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         
-        logger.info(f"Initializing WDIRS for dataset: {dataset}")
+        logger.info(f"Initializing QuWARTS for dataset: {dataset}")
         logger.info(f"Cache directory: {self.cache_dir}")
         logger.info(
             "Projection fast path: %s (col_batch_size=%s)",
@@ -270,7 +270,7 @@ class WDIRSRunner:
                 "Run: python -m spacy download en_core_web_sm"
             )
         
-        logger.info("WDIRS initialization complete")
+        logger.info("QuWARTS initialization complete")
     
     # ========================================================================
     # Phase 1: Offline Relational Synthesis (Preprocessing)
@@ -2503,7 +2503,7 @@ class WDIRSRunner:
     def close(self) -> None:
         """Close all connections."""
         self.data_layer.close()
-        logger.info("WDIRS runner closed")
+        logger.info("QuWARTS runner closed")
 
 
 # ============================================================================
@@ -2514,7 +2514,9 @@ def main():
     """Main CLI entry point."""
     import argparse
     
-    parser = argparse.ArgumentParser(description="WDIRS - Workload-Driven Incremental Relational Synthesis")
+    parser = argparse.ArgumentParser(
+        description="QuWARTS - Query Workload Aware Relational Table Synthesis from Unstructured Text"
+    )
     parser.add_argument("dataset", help="Dataset name")
     parser.add_argument("--preprocess", action="store_true", help="Run preprocessing")
     parser.add_argument("--query", help="Execute SQL query")
@@ -2525,7 +2527,7 @@ def main():
     args = parser.parse_args()
     
     # Initialize runner
-    runner = WDIRSRunner(args.dataset)
+    runner = QuWARTSRunner(args.dataset)
     
     try:
         if args.clear_cache:

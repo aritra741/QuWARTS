@@ -32,10 +32,10 @@ So the cache path is always: **`config.CACHE_DIR / "extractions"`**.
 From `config.py`:
 
 ```python
-CACHE_DIR = WDIRS_DIR / ".cache"   # = systems/WDIRS/.cache
+CACHE_DIR = QUWARTS_DIR / ".cache"   # = .cache
 ```
 
-So by default: **`systems/WDIRS/.cache/extractions`**.
+So by default: **`.cache/extractions`**.
 
 ### 2.2 During Preprocessing (test_player_workload.py)
 
@@ -58,7 +58,7 @@ After preprocessing, the config is restored. The extractor created during prepro
 
 The trend script **does not override** `config.CACHE_DIR`. So the extractor uses the **default**:
 
-**`systems/WDIRS/.cache/extractions`**
+**`.cache/extractions`**
 
 ### 2.4 Important: Extractor vs Runner Cache
 
@@ -168,7 +168,7 @@ So even with 0 LLM tasks, you still get **33 rows extracted** (or whatever the c
 
 Since preprocessing and row delta use **different** cache keys, preprocessing cache **cannot** satisfy row-delta lookups.
 
-The 0-task behavior happens when the extractor finds cache in **`systems/WDIRS/.cache/extractions`** (the default path). That can only be populated by:
+The 0-task behavior happens when the extractor finds cache in **`.cache/extractions`** (the default path). That can only be populated by:
 
 1. **A previous run of the trend script** that executed row delta for the same query (same chunks, same table, same predicates). Those runs wrote to the default `.cache/extractions`.
 2. **A previous run of player workload test** (or similar) that used the default `config.CACHE_DIR` and triggered row delta.
@@ -184,7 +184,7 @@ The trend script creates:
 - `snapshot/cache_snapshot` – copy of preprocessing run’s `.cache` (includes `extractions`).
 - `snapshot/extractions_snapshot` – copy of `source_cache/extractions`.
 
-The extractor, however, uses `config.CACHE_DIR / "extractions"` = **`systems/WDIRS/.cache/extractions`**, which is **not** the snapshot.
+The extractor, however, uses `config.CACHE_DIR / "extractions"` = **`.cache/extractions`**, which is **not** the snapshot.
 
 So:
 
@@ -213,7 +213,7 @@ To force fresh LLM extraction and avoid cache hits:
 
 1. **Delete the extraction cache** before running:
    ```bash
-   rm -rf systems/WDIRS/.cache/extractions/*
+   rm -rf .cache/extractions/*
    ```
 
 2. **Or** use a run-specific cache by overriding `config.CACHE_DIR` in the trend script (similar to preprocessing) before creating the runner.
@@ -225,7 +225,7 @@ To force fresh LLM extraction and avoid cache hits:
 | Question                         | Answer                                                                 |
 |---------------------------------|------------------------------------------------------------------------|
 | When is the cache created?      | During preprocessing (`extract_batch`) and during row delta (`extract_batch_with_predicates`). |
-| Where does it live?             | `config.CACHE_DIR/extractions` (default: `systems/WDIRS/.cache/extractions`). |
+| Where does it live?             | `config.CACHE_DIR/extractions` (default: `.cache/extractions`). |
 | Why 0 tasks but rows extracted? | All chunks hit cache → no LLM calls → 0 tasks; cached records are still inserted → rows extracted. |
 | Where do cache hits come from?   | Previous runs that used the default cache path and did row delta for the same query. |
 | Does preprocessing cache help row delta? | No. Different cache keys (no predicates vs with predicates). |

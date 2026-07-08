@@ -1,7 +1,7 @@
 #!/bin/bash
-# Script to check for errors in WDIRS log file
+# Script to check for errors in QuWARTS log file
 
-LOG_FILE="wdirs.log"
+LOG_FILE="quwarts.log"
 
 if [ ! -f "$LOG_FILE" ]; then
     echo "Log file not found: $LOG_FILE"
@@ -9,7 +9,7 @@ if [ ! -f "$LOG_FILE" ]; then
 fi
 
 echo "================================================================================"
-echo "ERRORS AND WARNINGS FROM WDIRS LOG"
+echo "ERRORS AND WARNINGS FROM QuWARTS LOG"
 echo "================================================================================"
 echo ""
 

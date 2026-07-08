@@ -7,7 +7,7 @@ known to be company_name before extraction).
 qwen2.5:7b-instruct supports 128k tokens, so the full document is sent.
 
 Usage (use project venv):
-  cd systems/WDIRS && ../../.venv/bin/python test_doc_entity_discovery.py
+  cd QuWARTS && ../../.venv/bin/python test_doc_entity_discovery.py
   ../../.venv/bin/python test_doc_entity_discovery.py --doc path/to/document.txt
 """
 
@@ -17,11 +17,11 @@ import re
 import sys
 from pathlib import Path
 
-# Run from WDIRS directory so local imports work
-WDIRS_ROOT = Path(__file__).resolve().parent
-PROJECT_ROOT = WDIRS_ROOT.parent.parent
-if str(WDIRS_ROOT) not in sys.path:
-    sys.path.insert(0, str(WDIRS_ROOT))
+# Run from QuWARTS directory so local imports work
+QUWARTS_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = QUWARTS_ROOT.parent.parent
+if str(QUWARTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(QUWARTS_ROOT))
 
 # Default: one Finance annual report
 DEFAULT_DOC = PROJECT_ROOT / "source_data" / "Finance" / "finance" / "1.txt"

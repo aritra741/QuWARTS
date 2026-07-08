@@ -7,7 +7,7 @@ the LLM returns the expected identity column. No domain hints are
 injected — the prompts use only structural descriptions.
 
 Usage:
-  cd systems/WDIRS && python test_identity_prompt.py
+  cd QuWARTS && python test_identity_prompt.py
   python test_identity_prompt.py --table player --expected player_name
   python test_identity_prompt.py --show-prompts   # print prompts only, no LLM call
 """
@@ -17,10 +17,10 @@ import logging
 import sys
 from pathlib import Path
 
-# Run from WDIRS directory so local imports work
-WDIRS_ROOT = Path(__file__).resolve().parent
-if str(WDIRS_ROOT) not in sys.path:
-    sys.path.insert(0, str(WDIRS_ROOT))
+# Run from QuWARTS directory so local imports work
+QUWARTS_ROOT = Path(__file__).resolve().parent
+if str(QUWARTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(QUWARTS_ROOT))
 
 # Minimal logging so entity_anchor messages are visible
 logging.basicConfig(

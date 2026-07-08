@@ -1,5 +1,5 @@
 """
-Comprehensive test script for WDIRS system with Finance workload.
+Comprehensive test script for QuWARTS system with Finance workload.
 Orchestrates preprocessing with training queries and validates with test queries.
 
 Phase 1: Preprocessing with Training Workload
@@ -29,11 +29,11 @@ try:
 except ImportError:
     MATPLOTLIB_AVAILABLE = False
 
-# Add systems/WDIRS to path
+# Add QuWARTS to path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from data_layer import DataLayer
-from wdirs_runner import WDIRSRunner, PreprocessingResult, QueryResult
+from quwarts_runner import QuWARTSRunner, PreprocessingResult, QueryResult
 from config import (
     PROJECT_ROOT, QUERY_DIR, SOURCE_DATA_DIR, RESULTS_DIR, 
     DB_DIR, MAX_PARALLEL_REQUESTS
@@ -170,13 +170,13 @@ def _augment_sql_with_entity(sql: str, entity_col: str, dialect: str = "duckdb")
     return parsed.sql(dialect=dialect)
 
 
-def _fetch_wdirs_with_entity(wdirs_db: Path, sql: str, entity_col: str) -> Optional[List[Dict]]:
-    """Query the phase-2 WDIRS SQLite DB with entity_col injected into the SELECT."""
+def _fetch_quwarts_with_entity(quwarts_db: Path, sql: str, entity_col: str) -> Optional[List[Dict]]:
+    """Query the phase-2 QuWARTS SQLite DB with entity_col injected into the SELECT."""
     aug = _augment_sql_with_entity(sql, entity_col, dialect="sqlite")
     if aug is None:
         return None
     try:
-        con = _sqlite3.connect(str(wdirs_db))
+        con = _sqlite3.connect(str(quwarts_db))
         con.row_factory = _sqlite3.Row
         cur = con.execute(aug)
         cols = [d[0] for d in cur.description]
@@ -184,21 +184,21 @@ def _fetch_wdirs_with_entity(wdirs_db: Path, sql: str, entity_col: str) -> Optio
         con.close()
         return rows
     except Exception as exc:
-        logger.warning(f"[Eval] Augmented WDIRS query failed: {exc}")
+        logger.warning(f"[Eval] Augmented QuWARTS query failed: {exc}")
         return None
 
 
 def _build_pred_df(
-    wdirs_rows: List[Dict],
+    quwarts_rows: List[Dict],
     expected_columns: List[str],
     stop_columns: List[str],
     attributes: Dict,
 ) -> "pd.DataFrame":
     """
-    Convert WDIRS result rows to a normalized DataFrame that mirrors what
+    Convert QuWARTS result rows to a normalized DataFrame that mirrors what
     ResultLoader would produce if it read a CSV file.
     """
-    df = pd.DataFrame(wdirs_rows) if wdirs_rows else pd.DataFrame(columns=expected_columns)
+    df = pd.DataFrame(quwarts_rows) if quwarts_rows else pd.DataFrame(columns=expected_columns)
     df = _drop_unnamed(df)
     df = df.rename(columns={c: _std_col(c) for c in df.columns})
     df = _norm_file_cols(df)
@@ -211,7 +211,7 @@ def _build_pred_df(
 
 def evaluate_with_official_framework(
     sql: str,
-    wdirs_rows: List[Dict],
+    quwarts_rows: List[Dict],
     *,
     gt_runner: "_GtRunner",
     sql_parser: "_SqlParser",
@@ -223,17 +223,17 @@ def evaluate_with_official_framework(
     output_dir: Path,
 ) -> Dict[str, Any]:
     """
-    Evaluate one WDIRS query result against the official UDA-Bench evaluation
+    Evaluate one QuWARTS query result against the official UDA-Bench evaluation
     framework.
 
     Differences from the CLI (run_eval.py):
-      • No file I/O for pred CSV — DataFrame is built directly from wdirs_rows.
+      • No file I/O for pred CSV — DataFrame is built directly from quwarts_rows.
       • Primary-key alignment uses the dataset identity column (company_name),
-        not the GT 'id' column, because WDIRS does not produce id columns.
+        not the GT 'id' column, because QuWARTS does not produce id columns.
       • Key columns are pre-normalized (lowercase + suffix stripping) so that
         "KPMG LLP" ≡ "KPMG" without requiring an external LLM call.
       • When entity_col is absent from the query projection, both the GT SQL
-        and the WDIRS query are augmented to include it for alignment only.
+        and the QuWARTS query are augmented to include it for alignment only.
 
     Returns a dict with keys:
         macro_f1, macro_precision, macro_recall, is_agg,
@@ -246,20 +246,20 @@ def evaluate_with_official_framework(
     # ── Ground-truth ─────────────────────────────────────────────────────────
     if is_agg:
         gt_sql           = sql
-        effective_wdirs  = wdirs_rows
+        effective_quwarts  = quwarts_rows
         primary_keys     = parsed.primary_keys  # GROUP BY cols
     else:
         # Ensure entity col is in GT result for row alignment
         aug_gt = _augment_sql_with_entity(sql, entity, dialect="duckdb")
         gt_sql = aug_gt if aug_gt else sql
 
-        # Mirror the augmentation on the WDIRS side if needed
-        wdirs_cols = {k.lower() for k in (wdirs_rows[0].keys() if wdirs_rows else {})}
-        if entity.lower() not in wdirs_cols and phase2_db.exists():
-            aug_wdirs       = _fetch_wdirs_with_entity(phase2_db, sql, entity)
-            effective_wdirs = aug_wdirs if aug_wdirs is not None else wdirs_rows
+        # Mirror the augmentation on the QuWARTS side if needed
+        quwarts_cols = {k.lower() for k in (quwarts_rows[0].keys() if quwarts_rows else {})}
+        if entity.lower() not in quwarts_cols and phase2_db.exists():
+            aug_quwarts       = _fetch_quwarts_with_entity(phase2_db, sql, entity)
+            effective_quwarts = aug_quwarts if aug_quwarts is not None else quwarts_rows
         else:
-            effective_wdirs = wdirs_rows
+            effective_quwarts = quwarts_rows
 
         primary_keys = [entity]
 
@@ -273,7 +273,7 @@ def evaluate_with_official_framework(
     # ── Prediction DataFrame ──────────────────────────────────────────────────
     manifest_for_pred = _QueryManifest(gt_sql, sql_parser.parse(gt_sql), attributes)
     pred_df = _build_pred_df(
-        effective_wdirs,
+        effective_quwarts,
         expected_columns=list(gold_df.columns),
         stop_columns=manifest_for_pred.stop_columns,
         attributes=attributes,
@@ -497,9 +497,9 @@ def run_preprocessing_phase(
         
         logger.info(f"Collected {len(training_queries)} training queries")
         
-        # Initialize WDIRS Runner
-        logger.info(f"\nInitializing WDIRS Runner for {dataset}")
-        runner = WDIRSRunner(
+        # Initialize QuWARTS Runner
+        logger.info(f"\nInitializing QuWARTS Runner for {dataset}")
+        runner = QuWARTSRunner(
             dataset=dataset,
             use_projection_fastpath=projection_fastpath,
             projection_fastpath_col_batch_size=projection_fastpath_col_batch_size,
@@ -539,9 +539,9 @@ def run_preprocessing_phase(
         CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
         checkpoint_path = CHECKPOINT_DIR / f"{dataset}_preprocessed.db"
         
-        # Copy the WDIRS database to checkpoint location.
-        # The runtime DB is always named wdirs.db (from config.DATABASE_URI).
-        db_path = DB_DIR / "wdirs.db"
+        # Copy the QuWARTS database to checkpoint location.
+        # The runtime DB is always named quwarts.db (from config.DATABASE_URI).
+        db_path = DB_DIR / "quwarts.db"
         if db_path.exists():
             shutil.copy2(db_path, checkpoint_path)
             logger.info(f"Saved checkpoint to {checkpoint_path}")
@@ -635,7 +635,7 @@ def run_test_phase(dataset: str, dataset_query: str, checkpoint_path: Path) -> T
         logger.info(f"Phase 2 working DB: {phase2_db}")
 
         phase2_uri = f"sqlite:///{phase2_db}"
-        runner = WDIRSRunner(dataset=dataset, postgres_uri=phase2_uri)
+        runner = QuWARTSRunner(dataset=dataset, postgres_uri=phase2_uri)
 
         # Restore the in-memory lattice from the training workload so the delta
         # engine knows table schemas and predicate literals.  This is a fast,
@@ -1055,7 +1055,7 @@ def generate_report(
     # Generate human-readable report
     report_file = RESULTS_BASE_DIR / "TEST_REPORT.md"
     with open(report_file, 'w') as f:
-        f.write("# WDIRS Finance Workload Test Report\n\n")
+        f.write("# QuWARTS Finance Workload Test Report\n\n")
         f.write(f"**Generated**: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n")
         
         # Preprocessing Summary
@@ -1183,7 +1183,7 @@ def main(
     log_file = RESULTS_BASE_DIR / "test_execution.log"
     setup_logging(log_file)
     
-    logger.info("Starting WDIRS Finance Workload Test")
+    logger.info("Starting QuWARTS Finance Workload Test")
     logger.info(f"Dataset: {DATASET}")
     logger.info(f"Query Dataset: {DATASET_QUERY}")
     logger.info(f"Results Directory: {RESULTS_BASE_DIR}")
@@ -1203,7 +1203,7 @@ def main(
         logger.info("\nSkipping Phase 1 (--skip-preprocessing flag set)")
         if not checkpoint_path.exists():
             # Checkpoint not yet copied — try to copy from the live DB right now.
-            db_path = DB_DIR / "wdirs.db"
+            db_path = DB_DIR / "quwarts.db"
             if db_path.exists():
                 import shutil as _shutil
                 CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)

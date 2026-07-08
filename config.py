@@ -1,5 +1,5 @@
 """
-Configuration module for WDIRS system.
+Configuration module for QuWARTS system.
 Defines all constants, paths, and system parameters.
 """
 
@@ -11,17 +11,17 @@ from pathlib import Path
 # ============================================================================
 
 # Base directories
-WDIRS_DIR = Path(__file__).parent
-PROJECT_ROOT = WDIRS_DIR.parent.parent
+QUWARTS_DIR = Path(__file__).parent
+PROJECT_ROOT = QUWARTS_DIR.parent.parent
 SOURCE_DATA_DIR = PROJECT_ROOT / "source_data"
 QUERY_DIR = PROJECT_ROOT / "Query"
 RESULTS_DIR = PROJECT_ROOT / "results"
 
-# WDIRS-specific directories
-CACHE_DIR = WDIRS_DIR / ".cache"
-DB_DIR = WDIRS_DIR / ".databases"
-INDEX_DIR = WDIRS_DIR / ".indexes"
-SIEVE_DIR = WDIRS_DIR / ".sieves"
+# QuWARTS-specific directories
+CACHE_DIR = QUWARTS_DIR / ".cache"
+DB_DIR = QUWARTS_DIR / ".databases"
+INDEX_DIR = QUWARTS_DIR / ".indexes"
+SIEVE_DIR = QUWARTS_DIR / ".sieves"
 
 # Create directories if they don't exist
 for directory in [CACHE_DIR, DB_DIR, INDEX_DIR, SIEVE_DIR]:
@@ -31,8 +31,8 @@ for directory in [CACHE_DIR, DB_DIR, INDEX_DIR, SIEVE_DIR]:
 # Database Configuration (SQLite)
 # ============================================================================
 
-# SQLite database path (relative to WDIRS directory or absolute)
-DB_PATH = os.getenv("WDIRS_DB_PATH", str(DB_DIR / "wdirs.db"))
+# SQLite database path (relative to QuWARTS directory or absolute)
+DB_PATH = os.getenv("QUWARTS_DB_PATH", str(DB_DIR / "quwarts.db"))
 
 # Connection string for SQLAlchemy
 DATABASE_URI = f"sqlite:///{DB_PATH}"
@@ -129,7 +129,7 @@ STATUS_FULL = "FULL"
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-LOG_FILE = WDIRS_DIR / "wdirs.log"
+LOG_FILE = QUWARTS_DIR / "quwarts.log"
 
 # ============================================================================
 # Performance Configuration
@@ -151,7 +151,7 @@ UNASSIGNED_CHUNK_CAP = int(os.getenv("UNASSIGNED_CHUNK_CAP", "0"))
 USE_PROJECTION_FASTPATH = os.getenv("USE_PROJECTION_FASTPATH", "false").lower() in {
     "1", "true", "yes", "y"
 }
-# If <=0, WDIRS passes all inferred columns in a single LLM call per document.
+# If <=0, QuWARTS passes all inferred columns in a single LLM call per document.
 PROJECTION_FASTPATH_COL_BATCH_SIZE = int(
     os.getenv("PROJECTION_FASTPATH_COL_BATCH_SIZE", "0")
 )

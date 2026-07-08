@@ -1,5 +1,5 @@
 """
-Workload Lattice Planner for WDIRS.
+Workload Lattice Planner for QuWARTS.
 Implements MQO (Multi-Query Optimization) and semantic type identification.
 """
 

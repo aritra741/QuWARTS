@@ -35,12 +35,12 @@ import pandas as pd
 import sqlglot
 import sqlglot.expressions as _sqlglot_exp
 
-# Add systems/WDIRS to path
+# Add QuWARTS to path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from token_counter import GLOBAL_COUNTER, ensure_precise_tokenizer_ready
 from extractor import OllamaClient
-from wdirs_runner import WDIRSRunner
+from quwarts_runner import QuWARTSRunner
 import config as config_module
 from config import (
     CACHE_DIR,
@@ -354,12 +354,12 @@ def _augment_sql_with_entity(sql: str, entity_col: str, dialect: str = "duckdb")
     return parsed.sql(dialect=dialect)
 
 
-def _fetch_wdirs_with_entity(wdirs_db: Path, sql: str, entity_col: str) -> Optional[List[Dict[str, Any]]]:
+def _fetch_quwarts_with_entity(quwarts_db: Path, sql: str, entity_col: str) -> Optional[List[Dict[str, Any]]]:
     aug = _augment_sql_with_entity(sql, entity_col, dialect="sqlite")
     if aug is None:
         return None
     try:
-        con = sqlite3.connect(str(wdirs_db))
+        con = sqlite3.connect(str(quwarts_db))
         con.row_factory = sqlite3.Row
         cur = con.execute(aug)
         cols = [d[0] for d in cur.description]
@@ -367,17 +367,17 @@ def _fetch_wdirs_with_entity(wdirs_db: Path, sql: str, entity_col: str) -> Optio
         con.close()
         return rows
     except Exception as exc:
-        logger.warning(f"[Eval] Augmented WDIRS query failed: {exc}")
+        logger.warning(f"[Eval] Augmented QuWARTS query failed: {exc}")
         return None
 
 
 def _build_pred_df(
-    wdirs_rows: List[Dict[str, Any]],
+    quwarts_rows: List[Dict[str, Any]],
     expected_columns: List[str],
     stop_columns: List[str],
     attributes: Dict[str, Any],
 ) -> "pd.DataFrame":
-    df = pd.DataFrame(wdirs_rows) if wdirs_rows else pd.DataFrame(columns=expected_columns)
+    df = pd.DataFrame(quwarts_rows) if quwarts_rows else pd.DataFrame(columns=expected_columns)
     df = _drop_unnamed(df)
     df = df.rename(columns={c: _std_col(c) for c in df.columns})
     df = _norm_file_cols(df)
@@ -465,7 +465,7 @@ def _compute_aggregation_relative_error(
 
 def evaluate_with_official_framework(
     sql: str,
-    wdirs_rows: List[Dict[str, Any]],
+    quwarts_rows: List[Dict[str, Any]],
     *,
     gt_runner: "_GtRunner",
     sql_parser: "_SqlParser",
@@ -490,7 +490,7 @@ def evaluate_with_official_framework(
         try:
             relative_error = _compute_aggregation_relative_error(
                 parsed,
-                wdirs_rows,
+                quwarts_rows,
                 gold_df.to_dict(orient="records"),
             )
         except Exception as re_exc:
@@ -509,19 +509,19 @@ def evaluate_with_official_framework(
     entity = identity_col or "name"
     aug_gt = _augment_sql_with_entity(sql, entity, dialect="duckdb")
     gt_sql = aug_gt if aug_gt else sql
-    wdirs_cols = {k.lower() for k in (wdirs_rows[0].keys() if wdirs_rows else {})}
-    if entity.lower() not in wdirs_cols and phase2_db.exists():
-        aug_wdirs = _fetch_wdirs_with_entity(phase2_db, sql, entity)
-        effective_wdirs = aug_wdirs if aug_wdirs is not None else wdirs_rows
+    quwarts_cols = {k.lower() for k in (quwarts_rows[0].keys() if quwarts_rows else {})}
+    if entity.lower() not in quwarts_cols and phase2_db.exists():
+        aug_quwarts = _fetch_quwarts_with_entity(phase2_db, sql, entity)
+        effective_quwarts = aug_quwarts if aug_quwarts is not None else quwarts_rows
     else:
-        effective_wdirs = wdirs_rows
+        effective_quwarts = quwarts_rows
 
     gold_df = gt_runner.run(gt_sql)
     primary_keys: List[str] = [entity] if entity in gold_df.columns else parsed.primary_keys
 
     manifest_for_pred = _QueryManifest(gt_sql, sql_parser.parse(gt_sql), attributes)
     pred_df = _build_pred_df(
-        effective_wdirs,
+        effective_quwarts,
         expected_columns=list(gold_df.columns),
         stop_columns=manifest_for_pred.stop_columns,
         attributes=attributes,
@@ -729,7 +729,7 @@ def load_redd_enabled_query_ids() -> Set[str]:
     import importlib.util
     import sys
 
-    module_name = "_wdirs_redd_trend_module"
+    module_name = "_quwarts_redd_trend_module"
     # If already loaded, reuse to avoid re-executing dataclass decorators
     if module_name in sys.modules:
         module = sys.modules[module_name]
@@ -931,9 +931,9 @@ def ensure_snapshot_artifacts(refresh_snapshot: bool = False) -> Tuple[Path, Opt
     source_db_candidates = [
         latest_run,
         RESULTS_DIR / "player_workload_test" / "checkpoint" / "Player_preprocessed.db",
-        Path(__file__).parent / "wdirs-2.db",
-        DB_DIR / "wdirs.db",
-        Path(__file__).parent / "wdirs-owner-only.db",
+        Path(__file__).parent / "quwarts-2.db",
+        DB_DIR / "quwarts.db",
+        Path(__file__).parent / "quwarts-owner-only.db",
     ]
     source_db = _first_existing([p for p in source_db_candidates if p is not None])
     if source_db is None:
@@ -1087,7 +1087,7 @@ def run_trend_queries(
     patch_ollama_for_token_tracking(token_tracker)
 
     try:
-        runner = WDIRSRunner(
+        runner = QuWARTSRunner(
             dataset=DATASET,
             postgres_uri=f"sqlite:///{working_db}",
             use_projection_fastpath=projection_fastpath,
@@ -1108,7 +1108,7 @@ def run_trend_queries(
         eval_sql_parser = _SqlParser()
         eval_row_matcher = _RowMatcher(settings=eval_settings)
 
-        # Keep WDIRS query set aligned with ReDD by running only IDs that are
+        # Keep QuWARTS query set aligned with ReDD by running only IDs that are
         # currently uncommented/active in ReDD's NL_QUERY_SPECS.
         redd_enabled_ids = load_redd_enabled_query_ids()
         trend_queries = [
@@ -1121,7 +1121,7 @@ def run_trend_queries(
                 f"ReDD file: {REDD_TREND_FILE}"
             )
         logger.info(
-            "Running %d WDIRS queries aligned to uncommented ReDD IDs",
+            "Running %d QuWARTS queries aligned to uncommented ReDD IDs",
             len(trend_queries),
         )
 
@@ -1354,7 +1354,7 @@ def main() -> int:
     ap.add_argument(
         "--projection-fastpath",
         action="store_true",
-        help="Enable projection fast path in WDIRS runner.",
+        help="Enable projection fast path in QuWARTS runner.",
     )
     ap.add_argument(
         "--projection-fastpath-col-batch-size",

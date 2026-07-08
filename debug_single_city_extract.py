@@ -1,8 +1,8 @@
 """
-Debug helper: run WDIRS extractor on one city source file.
+Debug helper: run QuWARTS extractor on one city source file.
 
 Usage:
-  python3 systems/WDIRS/debug_single_city_extract.py --file source_data/Player/city/1.txt
+  python3 debug_single_city_extract.py --file source_data/Player/city/1.txt
 """
 
 import argparse

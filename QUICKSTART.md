@@ -1,4 +1,4 @@
-# WDIRS Finance Workload Test - Quick Start Guide
+# QuWARTS Finance Workload Test - Quick Start Guide
 
 ## 30-Second Setup
 
@@ -25,7 +25,7 @@ ollama pull qwen2.5:7b-instruct
 ### 3. Run the Test
 
 ```bash
-cd /Users/aritramazumder/Documents/UDA-Bench-main/systems/WDIRS
+cd /Users/aritramazumder/Documents/QuWARTS
 
 # Run full test (preprocessing + testing + report generation)
 python test_finance_workload.py
@@ -175,7 +175,7 @@ In the JSON outputs, each query has:
 | "ModuleNotFoundError: matplotlib" | `pip install matplotlib` |
 | Charts not generated | Check matplotlib is installed; non-fatal if missing |
 | Test execution is slow | Check if Ollama is using GPU (CUDA/Metal) |
-| Database error | Delete `systems/WDIRS/.databases/Finance.db` and retry |
+| Database error | Delete `.databases/Finance.db` and retry |
 
 ## Example Commands
 

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Run WDIRS preprocessing for Player.owner table only.
+Run QuWARTS preprocessing for Player.owner table only.
 
 This script builds an owner-only workload query (no joins), runs preprocessing,
 and prints a compact quality snapshot for the resulting `owner` table.
 
 Usage:
-  cd systems/WDIRS
+  cd QuWARTS
   ../../.venv/bin/python test_owner_only_preprocess.py
-  ../../.venv/bin/python test_owner_only_preprocess.py --db "./wdirs-owner-only.db" --fresh
+  ../../.venv/bin/python test_owner_only_preprocess.py --db "./quwarts-owner-only.db" --fresh
 """
 
 import argparse
@@ -18,13 +18,13 @@ import logging
 from pathlib import Path
 import sys
 
-# Local imports from systems/WDIRS
-WDIRS_ROOT = Path(__file__).resolve().parent
-PROJECT_ROOT = WDIRS_ROOT.parent.parent
-if str(WDIRS_ROOT) not in sys.path:
-    sys.path.insert(0, str(WDIRS_ROOT))
+# Local imports from QuWARTS
+QUWARTS_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = QUWARTS_ROOT.parent.parent
+if str(QUWARTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(QUWARTS_ROOT))
 
-from wdirs_runner import WDIRSRunner
+from quwarts_runner import QuWARTSRunner
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ def build_owner_only_query() -> str:
     return "SELECT " + ", ".join(cols) + " FROM owner;"
 
 
-def print_owner_snapshot(runner: WDIRSRunner) -> None:
+def print_owner_snapshot(runner: QuWARTSRunner) -> None:
     """
     Print owner table quality indicators:
     - row count + distinct name count
@@ -112,8 +112,8 @@ def main() -> int:
     )
     ap.add_argument(
         "--db",
-        default=str(WDIRS_ROOT / "wdirs-owner-only.db"),
-        help="Output sqlite DB path (default: systems/WDIRS/wdirs-owner-only.db)",
+        default=str(QUWARTS_ROOT / "quwarts-owner-only.db"),
+        help="Output sqlite DB path (default: quwarts-owner-only.db)",
     )
     ap.add_argument(
         "--fresh",
@@ -122,8 +122,8 @@ def main() -> int:
     )
     ap.add_argument(
         "--log",
-        default=str(WDIRS_ROOT / "owner_only_preprocess.log"),
-        help="Log file path (default: systems/WDIRS/owner_only_preprocess.log)",
+        default=str(QUWARTS_ROOT / "owner_only_preprocess.log"),
+        help="Log file path (default: owner_only_preprocess.log)",
     )
     args = ap.parse_args()
 
@@ -139,7 +139,7 @@ def main() -> int:
     workload_query = build_owner_only_query()
     logger.info(f"owner-only workload query: {workload_query}")
 
-    runner = WDIRSRunner(dataset=args.dataset, postgres_uri=f"sqlite:///{db_path}")
+    runner = QuWARTSRunner(dataset=args.dataset, postgres_uri=f"sqlite:///{db_path}")
     result = runner.preprocess(workload_queries=[workload_query])
 
     logger.info("=== preprocess result ===")

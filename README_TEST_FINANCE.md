@@ -1,8 +1,8 @@
-# WDIRS Finance Workload Test Suite
+# QuWARTS Finance Workload Test Suite
 
 ## Overview
 
-This test suite orchestrates a complete end-to-end validation of the WDIRS (Workload-Driven Information Extraction from Relational Synthesis) system using the Finance dataset.
+This test suite orchestrates a complete end-to-end validation of QuWARTS (Query Workload Aware Relational Table Synthesis from Unstructured Text) using the Finance dataset.
 
 The pipeline has two phases:
 
@@ -30,9 +30,9 @@ The pipeline has two phases:
 ## Files
 
 ```
-systems/WDIRS/
+
 ├── test_finance_workload.py       # Main test orchestrator (this script)
-├── wdirs_runner.py                # WDIRS pipeline orchestration
+├── quwarts_runner.py                # QuWARTS pipeline orchestration
 ├── data_layer.py                  # SQLAlchemy schema + metadata registry
 ├── lattice_planner.py             # Workload analysis + MQO
 ├── sieve_synthesizer.py           # Programmatic sieve generation
@@ -84,7 +84,7 @@ results/finance_workload_test/
 ### 2. Run the Full Test
 
 ```bash
-cd /Users/aritramazumder/Documents/UDA-Bench-main/systems/WDIRS
+cd /Users/aritramazumder/Documents/QuWARTS
 
 # Run full pipeline (preprocessing + testing)
 python test_finance_workload.py
@@ -98,7 +98,7 @@ python test_finance_workload.py
 PHASE 1: OFFLINE RELATIONAL SYNTHESIS (Preprocessing)
 ================================================================================
 
-Initializing WDIRS Runner for Finance
+Initializing QuWARTS Runner for Finance
 Loading training queries from /Users/.../Query/Finance/Agg/agg_queries_finance.sql
 Loading training queries from /Users/.../Query/Finance/Filter/filter_queries_Finan.sql
 Loading training queries from /Users/.../Query/Finance/Select/select_queries.sql
@@ -307,7 +307,7 @@ tail -100 results/finance_workload_test/test_execution.log
 
 ## Architecture Notes
 
-### WDIRS Pipeline
+### QuWARTS Pipeline
 
 ```
 Query Workload
@@ -372,8 +372,8 @@ For each runtime query:
 
 ## References
 
-See `systems/WDIRS/` for implementation details:
-- `wdirs_runner.py`: Main orchestration logic
+See `ARCHITECTURE.md` for implementation details:
+- `quwarts_runner.py`: Main orchestration logic
 - `data_layer.py`: Schema + metadata registry design
 - `lattice_planner.py`: Workload analysis (MQO)
 - `delta_engine.py`: Runtime delta planning

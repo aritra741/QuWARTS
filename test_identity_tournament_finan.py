@@ -7,7 +7,7 @@ detect_identity_column() in tournament mode, and checks that the LLM-selected
 champion is the expected primary identity column (company_name for Finance).
 
 Usage:
-  cd systems/WDIRS && python test_identity_tournament_finan.py
+  cd QuWARTS && python test_identity_tournament_finan.py
   python test_identity_tournament_finan.py --csv /path/to/Finan.csv
   python test_identity_tournament_finan.py --expected company_name
 """
@@ -19,11 +19,11 @@ import sys
 from pathlib import Path
 from typing import List
 
-# Run from WDIRS directory so local imports work
-WDIRS_ROOT = Path(__file__).resolve().parent
-PROJECT_ROOT = WDIRS_ROOT.parent.parent
-if str(WDIRS_ROOT) not in sys.path:
-    sys.path.insert(0, str(WDIRS_ROOT))
+# Run from QuWARTS directory so local imports work
+QUWARTS_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = QUWARTS_ROOT.parent.parent
+if str(QUWARTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(QUWARTS_ROOT))
 
 # Log tournament rounds and result
 logging.basicConfig(

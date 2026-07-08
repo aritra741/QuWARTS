@@ -1,475 +1,139 @@
-# WDIRS - Workload-Driven Incremental Relational Synthesis
+# QuWARTS
 
-A complete implementation of workload-driven incremental relational synthesis that transforms unstructured text into queryable relational databases by leveraging SQL workloads to optimize extraction costs.
+**Query Workload Aware Relational Table Synthesis from Unstructured Text**
 
 ## Overview
 
-WDIRS synthesizes high-precision relational databases from unstructured text by:
-1. Analyzing SQL workloads to determine what data to extract
-2. Using programmatic sieves to filter relevant text chunks
-3. Performing constrained LLM extraction with schema stabilization
-4. Resolving entities proactively using semantic embeddings
-5. Executing queries incrementally with delta calculation
+QuWARTS supports **analytical queries**—filtering, aggregation, and joins—over unstructured text by synthesizing relational tables in an **offline** phase guided by a **reference workload**, then executing queries **online** over the materialized tables.
 
-## Architecture
+The key idea is that offline extraction should be aware of expected query patterns (from historical or representative workloads). That workload guidance helps QuWARTS:
 
-### Phase 1: Offline Relational Synthesis (Preprocessing)
+1. **Discover a query-intent-aligned schema** with the attributes needed for accurate answers
+2. **Populate tables** from the document corpus while keeping extraction cost low
+3. **Normalize entities and values** so joins and predicates work across documents (e.g., mapping "Lakers" and "Los Angeles Lakers" to a canonical team name)
+4. **Index attributes** so queries referencing attributes outside the reference workload can still be answered without rebuilding the database
 
-```
-Raw Text → Chunking → Sieve Synthesis → Extraction → Entity Resolution → Relational DB
-```
+Compared with per-query extraction (high accuracy, high latency/cost) and query-unaware offline extraction (low latency/cost, low accuracy), QuWARTS targets **high accuracy with low query-time latency and cost**.
 
-**Components:**
-- **Data Layer** (`data_layer.py`): PostgreSQL storage, metadata registry, provenance tracking
-- **Lattice Planner** (`lattice_planner.py`): Workload analysis and MQO optimization
-- **Sieve Synthesizer** (`sieve_synthesizer.py`): Programmatic filtering with spaCy/FlashText
-- **Extractor** (`extractor.py`): LLM-based constrained extraction with Ollama
-- **Entity Resolver** (`entity_resolver.py`): Bi-encoder + cross-encoder resolution
+## System architecture
 
-### Phase 2: Runtime Execution (Query Time)
+QuWARTS operates in two phases:
+
+### Phase 1: Offline data extraction
 
 ```
-Query → Delta Calculation → Row/Column Delta → JIT Join Alignment → Results
+Unstructured documents + reference workload
+  → Schema discovery
+  → Data population
+  → Entity normalization
+  → Attribute indexing
+  → Synthesized relational tables
 ```
 
-**Components:**
-- **Delta Engine** (`delta_engine.py`): Incremental query execution
-- **WDIRS Runner** (`wdirs_runner.py`): Main orchestration
+| Component | Role | Implementation |
+|---|---|---|
+| **Schema discovery** | Infer tables, attributes, relationships, and primary keys from the workload | `lattice_planner.py`, `extractor.py` |
+| **Data population** | Extract values from relevant document chunks into tables | `extractor.py`, `sieve_synthesizer.py` (chunk filtering); Evaporate-style fallback in `entity_anchor.py` |
+| **Entity normalization** | Resolve synonymous entity mentions to canonical forms | `entity_resolver.py` (bi-encoder + cross-encoder) |
+| **Attribute indexing** | Map document chunks to mentioned attributes for later online augmentation | `attribute_index.py` |
+
+### Phase 2: Online query processing
+
+Queries whose attributes are already materialized run directly over the precomputed tables. When a query references an **unseen attribute**, QuWARTS consults the attribute index, extracts the missing values online, augments the table, and then executes the query (`delta_engine.py`, `quwarts_runner.py`).
+
+## Example: UDA-Bench NBA
+
+A typical setup uses the **NBA dataset from UDA-Bench** with the **NBA Players workload**:
+
+- **Reference workload:** training queries used during offline preprocessing
+- **Test queries:** held-out preset queries for evaluation
+- **LLM:** `qwen2.5:7b-instruct` via Ollama
+- **Entity resolution:** configurable; defaults to sentence-transformer–based resolution in `entity_resolver.py`
 
 ## Installation
 
-### 1. Prerequisites
+### Prerequisites
 
 - Python 3.9+
-- PostgreSQL 14+
-- Ollama with qwen2.5:7b-instruct model
+- [Ollama](https://ollama.ai/) with `qwen2.5:7b-instruct`
 
-### 2. Install PostgreSQL
-
-**macOS:**
-```bash
-brew install postgresql@14
-brew services start postgresql@14
-```
-
-**Ubuntu/Debian:**
-```bash
-sudo apt update
-sudo apt install postgresql postgresql-contrib
-sudo systemctl start postgresql
-```
-
-### 3. Create Database
+### Quick setup
 
 ```bash
-# Create database
-createdb wdirs
+git clone https://github.com/aritra741/QuWARTS.git
+cd QuWARTS
 
-# Or with custom user
-sudo -u postgres createdb wdirs
-sudo -u postgres createuser wdirs_user
-sudo -u postgres psql -c "ALTER USER wdirs_user WITH PASSWORD 'your_password';"
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE wdirs TO wdirs_user;"
-```
-
-### 4. Install Python Dependencies
-
-```bash
-# Create virtual environment
 python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
+source venv/bin/activate
 pip install -r requirements.txt
-
-# Download spaCy model
 python -m spacy download en_core_web_sm
-```
 
-### 5. Install and Start Ollama
-
-```bash
-# Install Ollama (macOS/Linux)
-curl -fsSL https://ollama.ai/install.sh | sh
-
-# Pull the model
-ollama pull qwen2.5:7b-instruct
-
-# Start Ollama server
+# Terminal 1
 ollama serve
+
+# Terminal 2
+ollama pull qwen2.5:7b-instruct
 ```
 
-## Configuration
+Or run `./setup.sh` for an interactive setup.
 
-Edit `config.py` to configure:
-
-```python
-# PostgreSQL connection
-POSTGRES_HOST = "localhost"
-POSTGRES_PORT = 5432
-POSTGRES_USER = "postgres"
-POSTGRES_PASSWORD = "postgres"
-POSTGRES_DB = "wdirs"
-
-# Ollama settings
-OLLAMA_URL = "http://localhost:11434/v1"
-OLLAMA_MODEL = "qwen2.5:7b-instruct"
-
-# Text chunking
-CHUNK_SIZE = 500  # tokens
-CHUNK_OVERLAP = 50  # tokens
-
-# Entity resolution
-BI_ENCODER_THRESHOLD = 0.75
-CROSS_ENCODER_THRESHOLD = 0.95
-```
+Storage defaults to a local **SQLite** database (see `config.py`); no separate database server is required.
 
 ## Usage
 
-### Command Line Interface
+### NBA / Player workload
 
 ```bash
-# Preprocess a dataset
-python wdirs_runner.py Med --preprocess --workload Query/Med/
+# Offline preprocessing with the Player reference workload
+python test_player_workload.py
 
-# Execute a query
-python wdirs_runner.py Med --query "SELECT * FROM disease WHERE status = 'Approved'"
+# Query-awareness evaluation on held-out queries
+python test_player_query_awareness_trend.py
+```
 
-# Show statistics
-python wdirs_runner.py Med --stats
+### General CLI
 
-# Clear cache
-python wdirs_runner.py Med --clear-cache
+```bash
+# Offline preprocessing
+python quwarts_runner.py Player --preprocess --workload Query/Player/
+
+# Online query execution
+python quwarts_runner.py Player --query "SELECT name, team FROM player WHERE age > 30"
+
+# Statistics
+python quwarts_runner.py Player --stats
 ```
 
 ### Python API
 
 ```python
-from wdirs_runner import WDIRSRunner
+from quwarts_runner import QuWARTSRunner
 
-# Initialize
-runner = WDIRSRunner("Med")
-
-# Preprocess
-result = runner.preprocess(workload_path="Query/Med/")
-print(f"Extracted {result.total_records} records")
-
-# Execute query
+runner = QuWARTSRunner("Player")
+result = runner.preprocess(workload_path="Query/Player/")
 query_result = runner.execute_query(
-    "SELECT disease_name, treatment FROM disease WHERE status = 'Approved'"
+    "SELECT name, location, championship FROM player JOIN team ON player.team = team.name WHERE age > 30"
 )
-
-print(f"Delta type: {query_result.delta_type}")
-print(f"Results: {len(query_result.results)} rows")
-
-# Get statistics
-stats = runner.get_statistics()
-print(f"Total chunks: {stats['total_chunks']}")
-
-# Clean up
 runner.close()
 ```
 
-## System Flow
+## Repository layout
 
-### Preprocessing Example
+| Path | Description |
+|---|---|
+| `quwarts_runner.py` | Main orchestration entry point |
+| `lattice_planner.py` | Workload parsing and schema planning |
+| `extractor.py` | LLM-based table population |
+| `entity_resolver.py` | Entity normalization |
+| `attribute_index.py` | Attribute-to-chunk index for online augmentation |
+| `delta_engine.py` | Online query execution and table augmentation |
+| `test_player_workload.py` | NBA Player preprocessing script |
+| `test_player_query_awareness_trend.py` | Held-out query evaluation |
 
-```bash
-$ python wdirs_runner.py Med --preprocess
+## Interactive demo UI
 
-================================================================================
-PHASE 1: OFFLINE RELATIONAL SYNTHESIS
-================================================================================
-
-[Step 1/6] Loading workload...
-Workload parsed: 3 tables
-
-[Step 2/6] Ingesting text data...
-Ingested 1,234 chunks
-
-[Step 3/6] Synthesizing programmatic sieves...
-Synthesized sieve for disease (accuracy: 87.5%)
-Indexed 456 candidate chunks for disease
-
-[Step 4/6] Performing constrained global extraction...
-Stabilized schema for disease: 8 keys
-Extracted 234 records for disease
-
-[Step 5/6] Performing proactive entity resolution...
-Resolved 234 mentions -> 156 clusters
-
-[Step 6/6] Saving preprocessing results...
-Saved preprocessing results
-
-================================================================================
-PREPROCESSING COMPLETE
-Time: 145.32s
-Tables: 3
-Chunks: 1,234
-Records: 234
-================================================================================
-```
-
-### Query Execution Example
-
-```bash
-$ python wdirs_runner.py Med --query "SELECT * FROM disease WHERE status = 'Denied'"
-
-================================================================================
-PHASE 2: RUNTIME QUERY EXECUTION
-================================================================================
-Query: SELECT * FROM disease WHERE status = 'Denied'
-
-Delta plan: row_delta
-Missing columns: []
-Missing predicates: ['status = Denied']
-
-Executing row delta for 1 tables
-Row delta complete: 12 rows extracted
-
-================================================================================
-QUERY EXECUTION COMPLETE
-Time: 8.45s
-Delta type: row_delta
-Rows extracted: 12
-Rows enriched: 0
-================================================================================
-```
-
-## Delta Types
-
-WDIRS supports four types of delta execution:
-
-### 1. Cache Hit
-Query can be answered from existing materialized data.
-```sql
--- Already materialized: disease_name, status='Approved'
-SELECT disease_name FROM disease WHERE status = 'Approved'
-```
-
-### 2. Row Delta
-Need to extract new rows matching new predicates.
-```sql
--- New predicate: status='Denied'
-SELECT disease_name FROM disease WHERE status = 'Denied'
-```
-
-### 3. Column Delta
-Need to enrich existing rows with new columns.
-```sql
--- New column: treatment
-SELECT disease_name, treatment FROM disease WHERE status = 'Approved'
-```
-
-### 4. Mixed Delta
-Need both new rows and new columns.
-```sql
--- New predicate AND new column
-SELECT disease_name, treatment FROM disease WHERE status = 'Denied'
-```
-
-## Key Features
-
-### 1. Workload-Driven Extraction
-- Analyzes SQL workload to determine extraction objectives
-- Uses MQO to merge redundant extraction tasks
-- Identifies semantic types for intelligent filtering
-
-### 2. Programmatic Sieves
-- Synthesizes Python filtering functions using LLM
-- Uses spaCy NER, FlashText keywords, and regex patterns
-- Iteratively refines sieves based on test results
-
-### 3. Schema Stabilization
-- Samples chunks to discover common JSON keys
-- Freezes keys with >20% frequency
-- Ensures consistent extraction across chunks
-
-### 4. Proactive Entity Resolution
-- Bi-encoder (sentence-transformers) for fast blocking
-- Cross-encoder for accurate matching
-- Union-Find for efficient clustering
-- LLM-based canonicalization
-
-### 5. Incremental Query Execution
-- Delta calculation based on metadata registry
-- Row delta: Extract new rows for new predicates
-- Column delta: Enrich existing rows with new columns
-- JIT join alignment for cross-table queries
-
-### 6. Provenance Tracking
-- Links every extracted row to source chunks
-- Enables lazy enrichment without re-scanning corpus
-- Supports debugging and data lineage
-
-## Performance
-
-Typical performance on medical dataset (100 documents):
-
-| Phase | Time | Operations |
-|-------|------|------------|
-| Text Chunking | 2s | 1,234 chunks created |
-| Sieve Synthesis | 30s | 3 sieves synthesized |
-| Global Extraction | 180s | 234 records extracted |
-| Entity Resolution | 15s | 234 mentions → 156 clusters |
-| **Total Preprocessing** | **227s** | |
-| Query (Cache Hit) | 0.1s | SQL execution only |
-| Query (Row Delta) | 8s | 12 new rows extracted |
-| Query (Column Delta) | 12s | 234 rows enriched |
-
-## Troubleshooting
-
-### PostgreSQL Connection Error
-```
-Error: could not connect to server
-```
-**Solution:** Ensure PostgreSQL is running and credentials are correct.
-```bash
-pg_isready
-psql -U postgres -d wdirs -c "SELECT 1;"
-```
-
-### Ollama Connection Error
-```
-Error: Connection refused to http://localhost:11434
-```
-**Solution:** Start Ollama server.
-```bash
-ollama serve
-```
-
-### spaCy Model Not Found
-```
-OSError: [E050] Can't find model 'en_core_web_sm'
-```
-**Solution:** Download the model.
-```bash
-python -m spacy download en_core_web_sm
-```
-
-### Out of Memory
-```
-MemoryError: Unable to allocate array
-```
-**Solution:** Reduce batch size or use GPU.
-```python
-# In config.py
-EXTRACTION_BATCH_SIZE = 3  # Reduce from 5
-TOP_K_CANDIDATES = 10  # Reduce from 20
-```
-
-## Testing
-
-```bash
-# Run all tests
-pytest tests/
-
-# Run specific test
-pytest tests/test_data_layer.py
-
-# Run with coverage
-pytest --cov=. --cov-report=html
-```
-
-## Architecture Diagram
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         WDIRS System                             │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  Phase 1: Offline Synthesis                                     │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐       │
-│  │ Workload │→│  Lattice │→│  Sieve   │→│ Extractor│       │
-│  │ Parser   │  │ Planner  │  │Synthesis │  │          │       │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘       │
-│                                                   ↓              │
-│                                            ┌──────────┐          │
-│                                            │  Entity  │          │
-│                                            │ Resolver │          │
-│                                            └──────────┘          │
-│                                                   ↓              │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │              PostgreSQL Data Layer                        │  │
-│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐   │  │
-│  │  │Raw_Chunks│ │Metadata  │ │Provenance│ │Candidate │   │  │
-│  │  │          │ │Registry  │ │          │ │Index     │   │  │
-│  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘   │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                                                                  │
-│  Phase 2: Runtime Execution                                     │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐       │
-│  │  Query   │→│  Delta   │→│Row/Column│→│   SQL    │       │
-│  │          │  │ Engine   │  │  Delta   │  │ Executor │       │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘       │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-## Technical Specifications
-
-### Data Layer
-- **Storage:** PostgreSQL 14+ with JSONB support
-- **Chunking:** Recursive character splitting (500 tokens, 50 overlap)
-- **Indexing:** B-tree on doc_id, chunk_index; GIN on JSONB
-
-### LLM Integration
-- **Model:** Qwen 2.5 7B Instruct via Ollama
-- **Temperature:** 0.1 for extraction (consistency)
-- **Max Tokens:** 2000 per extraction
-- **Batching:** 5 chunks per batch
-
-### Entity Resolution
-- **Bi-Encoder:** all-MiniLM-L6-v2 (384-dim embeddings)
-- **Cross-Encoder:** ms-marco-MiniLM-L-6-v2
-- **Blocking Threshold:** 0.75 cosine similarity
-- **Matching Threshold:** 0.95 cross-encoder score
-- **Index:** FAISS IndexFlatIP for fast similarity search
-
-### Sieve Synthesis
-- **NER:** spaCy en_core_web_sm
-- **Keywords:** FlashText for fast matching
-- **Patterns:** Regex for structured data
-- **Refinement:** 3 iterations with LLM feedback
-
-## Limitations
-
-- **PostgreSQL Required:** System requires PostgreSQL (not SQLite)
-- **LLM Dependency:** Requires Ollama server running locally
-- **Single-Machine:** Not distributed (can process ~1M chunks)
-- **English Only:** spaCy model is English-only
-
-## Future Enhancements
-
-- [ ] Distributed processing with Ray/Dask
-- [ ] Support for other LLMs (GPT-4, Claude)
-- [ ] Multi-language support
-- [ ] Incremental schema evolution
-- [ ] Query optimization with cost models
-- [ ] Web UI for monitoring and debugging
-
-## Citation
-
-If you use WDIRS in your research, please cite:
-
-```bibtex
-@software{wdirs2024,
-  title={WDIRS: Workload-Driven Incremental Relational Synthesis},
-  author={WDIRS Development Team},
-  year={2024},
-  url={https://github.com/yourusername/UDA-Bench}
-}
-```
-
-## License
-
-Same as UDA-Bench parent project.
+The browser-based demo interface is implemented as a Next.js frontend in the companion **Q-ANSWER** project (not included in this repository).
 
 ## Contact
 
-For questions and support, please open an issue on GitHub.
-
----
-
-**Version:** 1.0.0  
-**Last Updated:** February 2026
+Please open a GitHub issue for questions.

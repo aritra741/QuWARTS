@@ -1,5 +1,5 @@
 """
-Constrained Global Extraction for WDIRS.
+Constrained Global Extraction for QuWARTS.
 Implements LLM-based extraction with schema stabilization and batching.
 """
 

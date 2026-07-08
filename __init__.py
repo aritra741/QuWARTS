@@ -1,5 +1,5 @@
 """
-WDIRS - Workload-Driven Incremental Relational Synthesis
+QuWARTS - Query Workload Aware Relational Table Synthesis from Unstructured Text
 =========================================================
 
 A complete implementation of workload-driven incremental relational synthesis
@@ -14,10 +14,10 @@ Core Modules:
 - extractor.py: LLM-based constrained extraction
 - entity_resolver.py: Proactive entity resolution with embeddings
 - delta_engine.py: Runtime incremental query execution
-- wdirs_runner.py: Main system orchestrator
+- quwarts_runner.py: Main system orchestrator
 
 Version: 1.0.0
 """
 
 __version__ = "1.0.0"
-__author__ = "WDIRS Development Team"
+__author__ = "QuWARTS Development Team"

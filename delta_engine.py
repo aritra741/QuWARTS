@@ -1,5 +1,5 @@
 """
-Delta Engine for WDIRS.
+Delta Engine for QuWARTS.
 Implements runtime incremental query execution with row and column deltas.
 """
 
@@ -82,7 +82,7 @@ class DeltaEngine:
         self.lattice_planner = lattice_planner
         self.extractor = extractor
         self.entity_resolver = entity_resolver
-        # Populated by WDIRSRunner; used to avoid row-delta duplicate explosions
+        # Populated by QuWARTSRunner; used to avoid row-delta duplicate explosions
         # by upserting on known identity columns instead of blind inserts.
         self.identity_columns: Dict[str, Optional[str]] = {}
         
@@ -583,7 +583,7 @@ class DeltaEngine:
             )
 
             # Ensure the dynamic table exists before inserting
-            from wdirs_runner import semantic_to_sql_type
+            from quwarts_runner import semantic_to_sql_type
             sql_schema = {col: semantic_to_sql_type(sem_type)
                           for col, sem_type in schema.items()}
             self.data_layer.create_dynamic_table(table_name, sql_schema)

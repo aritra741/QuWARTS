@@ -1,5 +1,5 @@
 """
-Attribute Index for WDIRS: 2-level index for smart column delta extraction.
+Attribute Index for QuWARTS: 2-level index for smart column delta extraction.
 
 During Phase 1 (preprocessing), discovers which attributes are mentioned in each chunk.
 During Phase 2 (runtime), maps missing columns to relevant chunks for targeted extraction.

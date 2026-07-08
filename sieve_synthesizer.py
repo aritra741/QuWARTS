@@ -1,5 +1,5 @@
 """
-Programmatic Sieve Synthesis for WDIRS.
+Programmatic Sieve Synthesis for QuWARTS.
 Generates filtering functions using spaCy, FlashText, and regex.
 """
 

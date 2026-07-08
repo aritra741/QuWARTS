@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Evaluate WDIRS on Player dataset with F1 score calculation.
+Evaluate QuWARTS on Player dataset with F1 score calculation.
 
 Process:
 1. Load ground truth from CSV files (Data/Player/)
@@ -21,14 +21,14 @@ from collections import defaultdict
 from difflib import SequenceMatcher
 from typing import List, Dict, Set, Tuple, Optional
 
-# Add WDIRS to path
+# Add QuWARTS to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-# Set environment variables before importing WDIRS
-os.environ['WDIRS_DB_PATH'] = str(Path(__file__).parent / '.databases' / 'wdirs_player_test.db')
+# Set environment variables before importing QuWARTS
+os.environ['QUWARTS_DB_PATH'] = str(Path(__file__).parent / '.databases' / 'quwarts_player_test.db')
 os.environ['OLLAMA_MODEL'] = 'qwen2.5:7b-instruct'
 
-from wdirs_runner import WDIRSRunner, PreprocessingResult, QueryResult
+from quwarts_runner import QuWARTSRunner, PreprocessingResult, QueryResult
 from lattice_planner import LatticePlanner
 
 
@@ -40,7 +40,7 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 GROUND_TRUTH_DIR = PROJECT_ROOT / "Data" / "Player"
 SOURCE_DATA_DIR = PROJECT_ROOT / "source_data" / "SyntheticPlayer"
 QUERY_DIR = PROJECT_ROOT / "Query" / "Player" / "Filter"
-RESULTS_DIR = PROJECT_ROOT / "results" / "wdirs_player_evaluation"
+RESULTS_DIR = PROJECT_ROOT / "results" / "quwarts_player_evaluation"
 
 # Create results directory
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -198,54 +198,54 @@ def row_to_tuple(row: Dict, columns: List[str]) -> Tuple:
 
 def find_matching_rows(
     gt_rows: List[Dict],
-    wdirs_rows: List[Dict],
+    quwarts_rows: List[Dict],
     columns: List[str],
     use_fuzzy: bool = True
 ) -> Tuple[int, int, int]:
     """
-    Find matching rows between ground truth and WDIRS results.
+    Find matching rows between ground truth and QuWARTS results.
     
     Returns:
         (true_positives, false_positives, false_negatives)
     """
     # Convert to sets of tuples for exact matching
     gt_tuples = {row_to_tuple(row, columns) for row in gt_rows}
-    wdirs_tuples = {row_to_tuple(row, columns) for row in wdirs_rows}
+    quwarts_tuples = {row_to_tuple(row, columns) for row in quwarts_rows}
     
     # Exact matches
-    exact_matches = gt_tuples & wdirs_tuples
+    exact_matches = gt_tuples & quwarts_tuples
     true_positives = len(exact_matches)
     
     # Remaining unmatched rows
     unmatched_gt = [row for row in gt_rows if row_to_tuple(row, columns) not in exact_matches]
-    unmatched_wdirs = [row for row in wdirs_rows if row_to_tuple(row, columns) not in exact_matches]
+    unmatched_quwarts = [row for row in quwarts_rows if row_to_tuple(row, columns) not in exact_matches]
     
     # Try fuzzy matching on unmatched rows
-    if use_fuzzy and unmatched_gt and unmatched_wdirs:
-        matched_wdirs_indices = set()
+    if use_fuzzy and unmatched_gt and unmatched_quwarts:
+        matched_quwarts_indices = set()
         
         for gt_row in unmatched_gt:
-            for i, wdirs_row in enumerate(unmatched_wdirs):
-                if i in matched_wdirs_indices:
+            for i, quwarts_row in enumerate(unmatched_quwarts):
+                if i in matched_quwarts_indices:
                     continue
                 
                 # Check if all columns match fuzzily
                 all_match = True
                 for col in columns:
-                    if not fuzzy_match(gt_row.get(col, ""), wdirs_row.get(col, "")):
+                    if not fuzzy_match(gt_row.get(col, ""), quwarts_row.get(col, "")):
                         all_match = False
                         break
                 
                 if all_match:
                     true_positives += 1
-                    matched_wdirs_indices.add(i)
+                    matched_quwarts_indices.add(i)
                     break
         
         # Update unmatched counts
-        unmatched_wdirs = [row for i, row in enumerate(unmatched_wdirs) 
-                          if i not in matched_wdirs_indices]
+        unmatched_quwarts = [row for i, row in enumerate(unmatched_quwarts) 
+                          if i not in matched_quwarts_indices]
     
-    false_positives = len(unmatched_wdirs)
+    false_positives = len(unmatched_quwarts)
     false_negatives = len(unmatched_gt)
     
     return true_positives, false_positives, false_negatives
@@ -315,7 +315,7 @@ def execute_query_on_ground_truth(query: str, ground_truth: Dict[str, List[Dict]
 def main():
     """Main evaluation function."""
     print("\n" + "=" * 80)
-    print("WDIRS PLAYER DATASET EVALUATION")
+    print("QuWARTS PLAYER DATASET EVALUATION")
     print("=" * 80)
     
     # Initialize timing tracker
@@ -348,20 +348,20 @@ def main():
     # Create training queries list (just the query strings, not tuples)
     training_query_strings = [query for table_name, qnum, query in train_queries]
     
-    # Initialize WDIRS
+    # Initialize QuWARTS
     print("\n" + "=" * 80)
-    print("INITIALIZING WDIRS")
+    print("INITIALIZING QuWARTS")
     print("=" * 80)
     
-    timer.start("init_wdirs")
+    timer.start("init_quwarts")
     try:
-        runner = WDIRSRunner("Player")
-        timer.end("init_wdirs")
+        runner = QuWARTSRunner("Player")
+        timer.end("init_quwarts")
     except Exception as e:
-        print(f"Error initializing WDIRS: {e}")
-        print("\nNote: WDIRS requires PostgreSQL. Make sure:")
+        print(f"Error initializing QuWARTS: {e}")
+        print("\nNote: QuWARTS requires PostgreSQL. Make sure:")
         print("1. PostgreSQL is installed and running")
-        print("2. Database 'wdirs_player_test' exists")
+        print("2. Database 'quwarts_player_test' exists")
         print("3. Ollama is running with qwen2.5:7b-instruct")
         return
     
@@ -382,7 +382,7 @@ def main():
             print(f"Error: {preprocess_result.error}")
             
             # Show log file location
-            log_file = Path(__file__).parent / "wdirs.log"
+            log_file = Path(__file__).parent / "quwarts.log"
             if log_file.exists():
                 print(f"\nCheck log file for details: {log_file}")
                 print("\nLast 50 lines of log:")
@@ -420,7 +420,7 @@ def main():
         traceback.print_exc()
         
         # Show log file
-        log_file = Path(__file__).parent / "wdirs.log"
+        log_file = Path(__file__).parent / "quwarts.log"
         if log_file.exists():
             print(f"\nCheck log file: {log_file}")
         return
@@ -446,29 +446,29 @@ def main():
         
         print(f"Ground truth: {len(gt_results)} rows")
         
-        # Execute with WDIRS
-        timer.start("wdirs_execution")
+        # Execute with QuWARTS
+        timer.start("quwarts_execution")
         try:
-            wdirs_result = runner.execute_query(query)
-            timer.end("wdirs_execution")
+            quwarts_result = runner.execute_query(query)
+            timer.end("quwarts_execution")
             
-            if not wdirs_result.success:
-                print(f"WDIRS execution failed: {wdirs_result.error}")
-                wdirs_results = []
+            if not quwarts_result.success:
+                print(f"QuWARTS execution failed: {quwarts_result.error}")
+                quwarts_results = []
             else:
-                wdirs_results = wdirs_result.results
-                print(f"WDIRS: {len(wdirs_results)} rows")
-                print(f"Delta type: {wdirs_result.delta_type}")
+                quwarts_results = quwarts_result.results
+                print(f"QuWARTS: {len(quwarts_results)} rows")
+                print(f"Delta type: {quwarts_result.delta_type}")
         
         except Exception as e:
-            print(f"WDIRS error: {e}")
-            wdirs_results = []
-            timer.end("wdirs_execution")
+            print(f"QuWARTS error: {e}")
+            quwarts_results = []
+            timer.end("quwarts_execution")
         
         # Calculate metrics
         if gt_results:
             columns = list(gt_results[0].keys())
-            tp, fp, fn = find_matching_rows(gt_results, wdirs_results, columns)
+            tp, fp, fn = find_matching_rows(gt_results, quwarts_results, columns)
             
             precision, recall, f1 = calculate_f1(tp, fp, fn)
             
@@ -484,7 +484,7 @@ def main():
                 'table': table_name,
                 'query': query,
                 'gt_rows': len(gt_results),
-                'wdirs_rows': len(wdirs_results),
+                'quwarts_rows': len(quwarts_results),
                 'tp': tp,
                 'fp': fp,
                 'fn': fn,
@@ -541,7 +541,7 @@ def main():
     runner.close()
     
     # Show any errors from log file
-    log_file = Path(__file__).parent / "wdirs.log"
+    log_file = Path(__file__).parent / "quwarts.log"
     if log_file.exists():
         print("\n" + "=" * 80)
         print("CHECKING FOR ERRORS IN LOG")

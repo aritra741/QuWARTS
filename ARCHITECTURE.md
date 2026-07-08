@@ -1,21 +1,23 @@
-# WDIRS Architecture Documentation
+# QuWARTS Architecture Documentation
+
+**Query Workload Aware Relational Table Synthesis from Unstructured Text**
 
 ## System Overview
 
-WDIRS (Workload-Driven Incremental Relational Synthesis) is a two-phase system that synthesizes relational databases from unstructured text using SQL workloads to guide extraction.
+QuWARTS is a two-phase system for analytical queries—filtering, aggregation, and joins—over unstructured text. In an **offline** phase, a **reference workload** guides schema discovery, table population, entity normalization, and attribute indexing. In an **online** phase, queries run over the materialized tables, with incremental augmentation when a query references attributes outside the reference workload.
 
 ## Core Principles
 
-1. **Workload-Driven**: SQL queries determine what data to extract
-2. **Incremental**: Only extract what's needed, when it's needed
-3. **Cost-Optimized**: Minimize expensive LLM calls through caching and MQO
-4. **Provenance-Tracked**: Every row links back to source text for lazy enrichment
+1. **Query workload aware**: Representative SQL workloads steer schema discovery and offline extraction toward query-relevant attributes
+2. **Incremental**: Materialize what the workload needs offline; augment online only for unseen attributes or predicates
+3. **Cost-optimized**: Minimize expensive LLM calls through caching, sieves, and MQO
+4. **Provenance-tracked**: Every row links back to source text for lazy enrichment
 
 ## System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    WDIRS System Architecture                     │
+│                    QuWARTS System Architecture                     │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -289,11 +291,11 @@ WDIRS (Workload-Driven Incremental Relational Synthesis) is a two-phase system t
 4. **MIXED_DELTA**: Both row and column
 5. **JOIN_ALIGNMENT**: Resolve join keys
 
-### 8. wdirs_runner.py
+### 8. quwarts_runner.py
 **Purpose:** Main orchestration and CLI
 
 **Key Classes:**
-- `WDIRSRunner`: Main runner
+- `QuWARTSRunner`: Main runner
 - `PreprocessingResult`, `QueryResult`: Result models
 
 **Key Operations:**
@@ -304,10 +306,10 @@ WDIRS (Workload-Driven Incremental Relational Synthesis) is a two-phase system t
 
 **CLI Commands:**
 ```bash
-python wdirs_runner.py <dataset> --preprocess
-python wdirs_runner.py <dataset> --query "SELECT ..."
-python wdirs_runner.py <dataset> --stats
-python wdirs_runner.py <dataset> --clear-cache
+python quwarts_runner.py <dataset> --preprocess
+python quwarts_runner.py <dataset> --query "SELECT ..."
+python quwarts_runner.py <dataset> --stats
+python quwarts_runner.py <dataset> --clear-cache
 ```
 
 ## Data Flow

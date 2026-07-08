@@ -1,5 +1,5 @@
 """
-Token Counter for WDIRS — Qwen2.5-7B-Instruct tokenizer.
+Token Counter for QuWARTS — Qwen2.5-7B-Instruct tokenizer.
 
 Provides a process-wide singleton (GLOBAL_COUNTER) that accumulates input and
 output token counts for every LLM call made through OllamaClient.generate().
@@ -113,7 +113,7 @@ _MODULE_LABELS = [
     ("entity_resolver", "entity_resolution"),
     ("lattice_planner", "lattice_planner"),
     ("delta_engine", "runtime_delta"),
-    ("wdirs_runner", "runner"),
+    ("quwarts_runner", "runner"),
     ("extractor", "extraction"),
 ]
 
@@ -121,7 +121,7 @@ _MODULE_LABELS = [
 def _infer_operation() -> str:
     """
     Walk the call stack (skipping token_counter and extractor frames) and
-    return a label for the first recognisable WDIRS module found.
+    return a label for the first recognisable QuWARTS module found.
     """
     for frame_info in inspect.stack():
         filename = frame_info.filename or ""

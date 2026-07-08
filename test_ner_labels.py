@@ -2,7 +2,7 @@
 Test: what spaCy NER labels are produced for Finance and Healthcare text,
 and what semantic types the heuristic assigns to relevant column names.
 
-Run from systems/WDIRS/:
+Run from :
     python3 test_ner_labels.py
 """
 

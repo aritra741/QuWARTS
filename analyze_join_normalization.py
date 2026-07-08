@@ -62,7 +62,7 @@ def count_exact_join(conn: sqlite3.Connection) -> int:
 
 
 def main() -> int:
-    db_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("wdirs (3).db")
+    db_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("quwarts (3).db")
     if not db_path.exists():
         print(f"DB not found: {db_path}")
         return 1

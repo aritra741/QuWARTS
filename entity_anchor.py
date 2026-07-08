@@ -1,5 +1,5 @@
 """
-Entity Anchor — identity-column detection for WDIRS.
+Entity Anchor — identity-column detection for QuWARTS.
 
 Two strategies depending on whether the workload provides an identity hint:
 

@@ -1,4 +1,4 @@
-# WDIRS - Workload-Driven Incremental Relational Synthesis
+# QuWARTS - Query Workload Aware Relational Table Synthesis from Unstructured Text
 # Requirements
 
 # Database

@@ -57,7 +57,7 @@ coverage.xml
 .pytype/
 
 # =============================================================================
-# WDIRS runtime artifacts (see config.py)
+# QuWARTS runtime artifacts (see config.py)
 # =============================================================================
 .cache/
 .databases/

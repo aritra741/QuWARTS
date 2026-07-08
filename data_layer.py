@@ -1,5 +1,5 @@
 """
-Data Layer & State Management for WDIRS.
+Data Layer & State Management for QuWARTS.
 Implements PostgreSQL schema, metadata registry, and provenance tracking.
 """
 
@@ -62,7 +62,7 @@ class ProvenanceRecord:
 
 class DataLayer:
     """
-    Manages all database operations for WDIRS.
+    Manages all database operations for QuWARTS.
     Handles text storage, metadata registry, and dynamic table creation.
     """
     
@@ -98,7 +98,7 @@ class DataLayer:
         logger.info("DataLayer initialized successfully")
     
     def _define_core_tables(self):
-        """Define the core WDIRS tables."""
+        """Define the core QuWARTS tables."""
         
         # Raw_Chunks: Stores chunked text from source documents
         self.raw_chunks = Table(

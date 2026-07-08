@@ -1,10 +1,10 @@
 #!/bin/bash
-# WDIRS Setup Script
+# QuWARTS Setup Script
 
 set -e
 
 echo "=================================="
-echo "WDIRS Setup"
+echo "QuWARTS Setup"
 echo "=================================="
 
 # Colors
@@ -101,7 +101,7 @@ echo "   macOS: brew services start postgresql@14"
 echo "   Ubuntu: sudo systemctl start postgresql"
 echo ""
 echo "2. Create database:"
-echo "   createdb wdirs"
+echo "   createdb quwarts"
 echo ""
 echo "3. Start Ollama server:"
 echo "   ollama serve"
@@ -110,9 +110,9 @@ echo "4. Activate virtual environment:"
 echo "   source venv/bin/activate"
 echo ""
 echo "5. Run preprocessing:"
-echo "   python wdirs_runner.py Med --preprocess --workload ../../Query/Med/"
+echo "   python quwarts_runner.py Med --preprocess --workload ../../Query/Med/"
 echo ""
 echo "6. Execute queries:"
-echo "   python wdirs_runner.py Med --query \"SELECT * FROM disease WHERE status = 'Approved'\""
+echo "   python quwarts_runner.py Med --query \"SELECT * FROM disease WHERE status = 'Approved'\""
 echo ""
 echo -e "${GREEN}Happy extracting!${NC}"

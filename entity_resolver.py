@@ -1,5 +1,5 @@
 """
-Proactive Entity Resolution for WDIRS.
+Proactive Entity Resolution for QuWARTS.
 Implements blocking and matching with sentence transformers and cross-encoders.
 """
 
