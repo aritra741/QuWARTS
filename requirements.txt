@@ -1,0 +1,35 @@
+# WDIRS - Workload-Driven Incremental Relational Synthesis
+# Requirements
+
+# Database
+sqlalchemy>=2.0.0
+duckdb>=0.9.0
+
+# SQL Parsing
+sqlglot>=20.0.0
+
+# LLM Integration
+openai>=1.0.0
+requests>=2.31.0
+
+# NLP and Entity Resolution
+spacy>=3.7.0
+flashtext>=2.7
+sentence-transformers>=2.2.0
+transformers>=4.35.0
+
+# Vector Search
+faiss-cpu>=1.7.4
+numpy>=1.24.0
+
+# Utilities
+pandas>=2.0.0
+tqdm>=4.66.0
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Optional: GPU support for faster embeddings
+# faiss-gpu>=1.7.4  # Uncomment if you have CUDA
+# torch>=2.0.0  # Uncomment if you want GPU acceleration
