@@ -2,62 +2,54 @@
 
 **Query Workload Aware Relational Table Synthesis from Unstructured Text**
 
-## Overview
+QuWARTS answers analytical SQL queries—filters, aggregations, and joins—over a corpus of unstructured documents. A *reference workload* guides an offline synthesis pass that discovers a schema, extracts tables, and normalizes entities. Online queries then run over the materialized tables, with incremental extraction only when a query mentions an attribute that was not in the reference workload.
 
-QuWARTS supports **analytical queries**—filtering, aggregation, and joins—over unstructured text by synthesizing relational tables in an **offline** phase guided by a **reference workload**, then executing queries **online** over the materialized tables.
+The system targets high answer quality without paying per-query extraction cost at runtime.
 
-The key idea is that offline extraction should be aware of expected query patterns (from historical or representative workloads). That workload guidance helps QuWARTS:
-
-1. **Discover a query-intent-aligned schema** with the attributes needed for accurate answers
-2. **Populate tables** from the document corpus while keeping extraction cost low
-3. **Normalize entities and values** so joins and predicates work across documents (e.g., mapping "Lakers" and "Los Angeles Lakers" to a canonical team name)
-4. **Index attributes** so queries referencing attributes outside the reference workload can still be answered without rebuilding the database
-
-Compared with per-query extraction (high accuracy, high latency/cost) and query-unaware offline extraction (low latency/cost, low accuracy), QuWARTS targets **high accuracy with low query-time latency and cost**.
-
-## System architecture
-
-QuWARTS operates in two phases:
-
-### Phase 1: Offline data extraction
+## How it works
 
 ```
-Unstructured documents + reference workload
-  → Schema discovery
-  → Data population
-  → Entity normalization
-  → Attribute indexing
-  → Synthesized relational tables
+Documents + reference SQL workload
+        │
+        ▼
+  Offline synthesis
+    schema discovery → table population → entity normalization → attribute index
+        │
+        ▼
+  Materialized SQLite tables
+        │
+        ▼
+  Online query
+    cache hit → execute SQL
+    unseen attribute → index lookup → extract → augment → execute SQL
 ```
 
-| Component | Role | Implementation |
+| Stage | Role | Module |
 |---|---|---|
-| **Schema discovery** | Infer tables, attributes, relationships, and primary keys from the workload | `lattice_planner.py`, `extractor.py` |
-| **Data population** | Extract values from relevant document chunks into tables | `extractor.py`, `sieve_synthesizer.py` (chunk filtering); Evaporate-style fallback in `entity_anchor.py` |
-| **Entity normalization** | Resolve synonymous entity mentions to canonical forms | `entity_resolver.py` (bi-encoder + cross-encoder) |
-| **Attribute indexing** | Map document chunks to mentioned attributes for later online augmentation | `attribute_index.py` |
+| Schema discovery | Infer tables, attributes, and keys from the workload | `quwarts.lattice_planner` |
+| Table population | Extract values from relevant document chunks | `quwarts.extractor`, `quwarts.sieve_synthesizer` |
+| Entity normalization | Map synonymous mentions to a canonical form | `quwarts.entity_resolver` |
+| Attribute index | Locate chunks that mention attributes outside the workload | `quwarts.attribute_index` |
+| Online execution | Run SQL, or extract a column/row delta when needed | `quwarts.delta_engine`, `quwarts.runner` |
 
-### Phase 2: Online query processing
+## Dataset
 
-Queries whose attributes are already materialized run directly over the precomputed tables. When a query references an **unseen attribute**, QuWARTS consults the attribute index, extracts the missing values online, augments the table, and then executes the query (`delta_engine.py`, `quwarts_runner.py`).
+This repository includes the **NBA Players** corpus from UDA-Bench:
 
-## Example: UDA-Bench NBA
+| Path | Contents |
+|---|---|
+| `source_data/Player/` | 216 documents (141 players, 30 teams, 16 owners, 29 cities) |
+| `Query/Player/` | Reference and held-out SQL workloads |
+| `Data/Player/` | Ground-truth tables (`player.db` and CSVs) |
 
-A typical setup uses the **NBA dataset from UDA-Bench** with the **NBA Players workload**:
-
-- **Reference workload:** training queries used during offline preprocessing
-- **Test queries:** held-out preset queries for evaluation
-- **LLM:** `qwen2.5:7b-instruct` via Ollama
-- **Entity resolution:** configurable; defaults to sentence-transformer–based resolution in `entity_resolver.py`
-
-## Installation
-
-### Prerequisites
+## Requirements
 
 - Python 3.9+
 - [Ollama](https://ollama.ai/) with `qwen2.5:7b-instruct`
 
-### Quick setup
+Storage is local **SQLite**. No database server is required.
+
+## Installation
 
 ```bash
 git clone https://github.com/aritra741/QuWARTS.git
@@ -65,7 +57,7 @@ cd QuWARTS
 
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install -e .
 python -m spacy download en_core_web_sm
 
 # Terminal 1
@@ -75,65 +67,70 @@ ollama serve
 ollama pull qwen2.5:7b-instruct
 ```
 
-Or run `./setup.sh` for an interactive setup.
-
-Storage defaults to a local **SQLite** database (see `config.py`); no separate database server is required.
+`./setup.sh` performs the same steps interactively.
 
 ## Usage
 
-### NBA / Player workload
+### Command line
 
 ```bash
-# Offline preprocessing with the Player reference workload
-python test_player_workload.py
+# Offline synthesis from a reference workload
+python -m quwarts Player --preprocess --workload Query/Player/
 
-# Query-awareness evaluation on held-out queries
-python test_player_query_awareness_trend.py
-```
+# Online query
+python -m quwarts Player --query "SELECT name, team FROM player WHERE age > 30"
 
-### General CLI
-
-```bash
-# Offline preprocessing
-python quwarts_runner.py Player --preprocess --workload Query/Player/
-
-# Online query execution
-python quwarts_runner.py Player --query "SELECT name, team FROM player WHERE age > 30"
-
-# Statistics
-python quwarts_runner.py Player --stats
+# Materialized-table statistics
+python -m quwarts Player --stats
 ```
 
 ### Python API
 
 ```python
-from quwarts_runner import QuWARTSRunner
+from quwarts import QuWARTSRunner
 
 runner = QuWARTSRunner("Player")
-result = runner.preprocess(workload_path="Query/Player/")
-query_result = runner.execute_query(
-    "SELECT name, location, championship FROM player JOIN team ON player.team = team.name WHERE age > 30"
+runner.preprocess(workload_path="Query/Player/")
+result = runner.execute_query(
+    "SELECT name, location, championship "
+    "FROM player JOIN team ON player.team = team.name "
+    "WHERE age > 30"
 )
 runner.close()
 ```
 
+## Reproducing paper experiments
+
+```bash
+# Offline synthesis on the NBA Players workload
+python experiments/preprocess_player.py
+
+# Held-out query-awareness trend
+python experiments/eval_query_awareness.py
+```
+
+Outputs go under `results/`. Plot helper: `experiments/plot_trend.py`.
+
 ## Repository layout
 
-| Path | Description |
-|---|---|
-| `quwarts_runner.py` | Main orchestration entry point |
-| `lattice_planner.py` | Workload parsing and schema planning |
-| `extractor.py` | LLM-based table population |
-| `entity_resolver.py` | Entity normalization |
-| `attribute_index.py` | Attribute-to-chunk index for online augmentation |
-| `delta_engine.py` | Online query execution and table augmentation |
-| `test_player_workload.py` | NBA Player preprocessing script |
-| `test_player_query_awareness_trend.py` | Held-out query evaluation |
+```
+quwarts/           # installable package
+experiments/       # Player evaluation scripts
+source_data/       # NBA documents
+Query/             # SQL workloads
+Data/              # ground-truth tables
+evaluation/        # UDA-Bench metrics harness
+tests/             # unit tests
+```
 
-## Interactive demo UI
+```bash
+pytest tests/
+```
 
-The browser-based demo interface is implemented as a Next.js frontend in the companion **Q-ANSWER** project (not included in this repository).
+## Citation
 
-## Contact
+If you use QuWARTS, please cite the VLDB paper.
 
-Please open a GitHub issue for questions.
+## License
+
+MIT. See [LICENSE](LICENSE).

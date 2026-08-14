@@ -1,0 +1,14 @@
+text:
+  # model: "text-embedding-3-large"
+  # api_base: "https://aihubmix.com/v1"
+  # api_key: "sk-your-key"
+
+  model: "openai/qwen3-embedding-8b"
+  api_base: "https://aihubmix.com/v1"
+  api_key: "sk-your-key"
+
+
+image:
+  model: "jina-clip-v2"
+  api_base: "https://aihubmix.com/v1"
+  api_key: "sk-your-key"

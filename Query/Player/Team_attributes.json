@@ -1,0 +1,53 @@
+{
+  "team": {
+    "team_name": {
+      "value_type": "str",
+      "usage": "general",
+      "modality": "text",
+      "is_nullable": false,
+      "description": "official name of the NBA team.",
+      "is_fixed": false
+    },
+    "city": {
+      "value_type": "str",
+      "usage": "general",
+      "modality": "text",
+      "is_nullable": false,
+      "description": "city where the team is based.",
+      "is_fixed": false
+    },
+    "founded_year": {
+      "value_type": "int",
+      "usage": "numerical",
+      "modality": "text",
+      "is_nullable": false,
+      "description": "year the team was founded; use format YYYY (e.g., 1946).",
+      "is_fixed": false
+    },
+    "championships": {
+      "value_type": "int",
+      "usage": "numerical",
+      "modality": "text",
+      "is_nullable": false,
+      "description": "total number of NBA championships won by the team.",
+      "is_fixed": false
+    },
+    "ownership": {
+      "value_type": "str",
+      "usage": "general",
+      "modality": "text",
+      "is_nullable": false,
+      "description": "name of the team owner or ownership group.",
+      "is_fixed": false
+    },
+    "arena": {
+      "value_type": "str",
+      "usage": "general",
+      "modality": "text",
+      "is_nullable": false,
+      "description": "name of the home arena where the team plays.",
+      "is_fixed": false
+    }
+  }
+}
+

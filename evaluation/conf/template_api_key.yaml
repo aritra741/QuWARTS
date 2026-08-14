@@ -1,0 +1,22 @@
+# API 密钥与端点配置文件（仅用于本地开发）
+# 请勿提交真实密钥到版本控制系统！
+
+api_keys:
+  # OpenAI 官方 API 或兼容接口（如通过代理）
+  openai:
+    api_key: "sk-your-openai-key-here"
+    api_base: "https://api.openai.com/v1"  # 可替换为代理地址，例如 http://localhost:8000/v1
+
+  aihubmix:
+    api_key: "sk-your api key"
+    api_base: "https://aihubmix.com/v1"
+
+  openrouter:
+    api_key: "sk-your-openrouter-key-here"
+    api_base: "https://openrouter.ai/api/v1"
+
+  # AWS 凭据（如果需要多个字段，保持原有结构）
+  aws:
+    access_key_id: "YOUR_AWS_ACCESS_KEY"
+    secret_access_key: "YOUR_AWS_SECRET_KEY"
+    # 注意：AWS 通常不使用 api_base 概念，因此无需添加

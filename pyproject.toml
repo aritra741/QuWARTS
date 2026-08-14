@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quwarts"
+version = "1.0.0"
+description = "Query Workload Aware Relational Table Synthesis from Unstructured Text"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [{ name = "The QuWARTS Authors" }]
+keywords = ["information-extraction", "text-to-sql", "workload", "llm"]
+dependencies = [
+    "sqlalchemy>=2.0.0",
+    "sqlglot>=20.0.0",
+    "openai>=1.0.0",
+    "requests>=2.31.0",
+    "spacy>=3.7.0",
+    "flashtext>=2.7",
+    "sentence-transformers>=2.2.0",
+    "transformers>=4.35.0",
+    "faiss-cpu>=1.7.4",
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "tqdm>=4.66.0",
+    "matplotlib>=3.8.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4.0", "pytest-cov>=4.1.0"]
+
+[project.scripts]
+quwarts = "quwarts.runner:main"
+
+[project.urls]
+Homepage = "https://github.com/aritra741/QuWARTS"
+
+[tool.setuptools.packages.find]
+include = ["quwarts*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

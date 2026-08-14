@@ -61,7 +61,6 @@ coverage.xml
 # =============================================================================
 .cache/
 .databases/
-.indexes/
 .sieves/
 
 # SQLite databases and WAL sidecar files
@@ -70,6 +69,7 @@ coverage.xml
 *.db-wal
 *.sqlite
 *.sqlite3
+!Data/Player/player.db
 
 # Serialized caches (entity resolution, FAISS, etc.)
 *.pkl
@@ -113,9 +113,6 @@ Thumbs.db
 *.swp
 *.swo
 *~
-
-# VS Code — uncomment to ignore local workspace settings
-# .vscode/
 
 # =============================================================================
 # Local results (parent repo may use ../../results; ignore if created here)
