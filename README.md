@@ -129,7 +129,23 @@ pytest tests/
 
 ## Citation
 
-If you use QuWARTS, please cite the VLDB paper.
+If you use QuWARTS, please cite:
+
+Aritra Mazumder, Whanhee Cho, and Anna Fariha. [QuWARTS: Query Workload Aware Relational Table Synthesis from Unstructured Text](https://www.vldb.org/pvldb/vol19/p4530-mazumder.pdf). PVLDB, 19(12): 4530–4533, 2026. doi:[10.14778/3827998.3828058](https://doi.org/10.14778/3827998.3828058)
+
+```bibtex
+@article{mazumder2026quwarts,
+  author  = {Mazumder, Aritra and Cho, Whanhee and Fariha, Anna},
+  title   = {{QuWARTS}: Query Workload Aware Relational Table Synthesis from Unstructured Text},
+  journal = {Proceedings of the VLDB Endowment},
+  volume  = {19},
+  number  = {12},
+  pages   = {4530--4533},
+  year    = {2026},
+  doi     = {10.14778/3827998.3828058},
+  url     = {https://www.vldb.org/pvldb/vol19/p4530-mazumder.pdf}
+}
+```
 
 ## License
 
