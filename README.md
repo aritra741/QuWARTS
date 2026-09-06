@@ -9,6 +9,10 @@
   VLDB 2026
 </p>
 
+<p align="center">
+  <strong>Live website:</strong> <a href="https://quwarts-papers.vercel.app/">https://quwarts-papers.vercel.app/</a>
+</p>
+
 **Query Workload Aware Relational Table Synthesis from Unstructured Text**
 
 QuWARTS answers analytical SQL queries—filters, aggregations, and joins—over a corpus of unstructured documents. A *reference workload* guides an offline synthesis pass that discovers a schema, extracts tables, and normalizes entities. Online queries then run over the materialized tables, with incremental extraction only when a query mentions an attribute that was not in the reference workload.
@@ -25,6 +29,8 @@ The system targets high answer quality without paying per-query extraction cost 
 
 <p align="center">
   <a href="https://users.cs.utah.edu/~afariha/quwarts.mp4">Watch the VLDB 2026 demo video</a>
+  ·
+  <a href="https://quwarts-papers.vercel.app/">Try the live website</a>
 </p>
 
 ## How it works
