@@ -15,6 +15,18 @@ QuWARTS answers analytical SQL queries—filters, aggregations, and joins—over
 
 The system targets high answer quality without paying per-query extraction cost at runtime.
 
+## Demo
+
+<p align="center">
+  <video src="https://users.cs.utah.edu/~afariha/quwarts.mp4" controls width="720" playsinline>
+    <a href="https://users.cs.utah.edu/~afariha/quwarts.mp4">Watch the VLDB 2026 demo</a>
+  </video>
+</p>
+
+<p align="center">
+  <a href="https://users.cs.utah.edu/~afariha/quwarts.mp4">Watch the VLDB 2026 demo video</a>
+</p>
+
 ## How it works
 
 ```
