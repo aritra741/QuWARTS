@@ -1,5 +1,14 @@
 # QuWARTS
 
+<p align="center">
+  <img src="docs/vldb-best-demo-trophy.png" alt="Trophy" width="140">
+</p>
+
+<p align="center">
+  <strong>Best Demo Award (Honorable Mention)</strong><br>
+  VLDB 2026
+</p>
+
 **Query Workload Aware Relational Table Synthesis from Unstructured Text**
 
 QuWARTS answers analytical SQL queries—filters, aggregations, and joins—over a corpus of unstructured documents. A *reference workload* guides an offline synthesis pass that discovers a schema, extracts tables, and normalizes entities. Online queries then run over the materialized tables, with incremental extraction only when a query mentions an attribute that was not in the reference workload.
